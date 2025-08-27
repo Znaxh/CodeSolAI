@@ -15,6 +15,7 @@ from .providers.provider_manager import ProviderManager
 from .spinner_manager import SpinnerManager
 from .setup import Setup
 from .interactive_session import InteractiveSession
+from .core.enhanced_agent import EnhancedAgent
 from . import __version__
 
 console = Console()
@@ -98,6 +99,10 @@ async def async_main(**kwargs):
     )
 
     if should_enter_interactive_mode:
+        # Load config for interactive mode
+        config = Config()
+        app_config = config.get_config(kwargs)
+
         # Need provider and API key for interactive mode
         provider = kwargs.get('provider') or app_config.get('defaultProvider')
         if not provider:
@@ -209,13 +214,12 @@ async def async_main(**kwargs):
     autonomous_mode = kwargs.get('autonomous') or app_config.get('agent', {}).get('autonomous', False)
     effort_level = kwargs.get('effort') or app_config.get('agent', {}).get('effort', 'medium')
 
-    # For simple prompts without agent mode, use direct provider call
-    if not agent_enabled:
-        await handle_simple_prompt(provider, api_key, prompt, kwargs, app_config)
+    max_iterations = kwargs.get('max_iterations') or app_config.get('agent', {}).get('maxIterations', 10)
+
+    # Use agent mode if enabled
+    if agent_enabled:
+        await handle_agent_prompt(provider, api_key, prompt, kwargs, app_config, effort_level, max_iterations, autonomous_mode)
     else:
-        # Agent mode not yet implemented
-        Utils.log_error('Agent mode not yet implemented')
-        Utils.log_info('Using simple mode instead')
         await handle_simple_prompt(provider, api_key, prompt, kwargs, app_config)
 
 
@@ -269,6 +273,81 @@ async def handle_simple_prompt(provider: str, api_key: str, prompt: str,
             Utils.log_info('Check your internet connection and try again')
         
         sys.exit(1)
+
+
+async def handle_agent_prompt(provider: str, api_key: str, prompt: str,
+                             options: Dict[str, Any], config: Dict[str, Any],
+                             effort_level: str, max_iterations: int, autonomous_mode: bool):
+    """Handle prompt using the enhanced agent system"""
+    spinner = SpinnerManager()
+
+    try:
+        # Initialize the enhanced agent
+        agent_options = {
+            'provider': provider,
+            'api_key': api_key,
+            'model': options.get('model'),
+            'temperature': options.get('temperature', 0.7),
+            'max_tokens': options.get('max_tokens', 4000),
+            'effort': effort_level,
+            'max_iterations': max_iterations,
+            'tools_enabled': True,
+            'auto_approve': autonomous_mode,
+            'confirmation_required': not autonomous_mode
+        }
+
+        spinner.start('Initializing agent')
+        agent = EnhancedAgent(agent_options)
+
+        # Process the prompt through the agent
+        spinner.update_message('Agent processing')
+        result = await agent.process_prompt(prompt, agent_options)
+
+        if result.get('success', False):
+            # Success with timing and agent info
+            elapsed = spinner.get_elapsed_time()
+            actions_count = result.get('actions_executed', 0)
+
+            if actions_count > 0:
+                spinner.succeed(f'Agent completed {actions_count} actions in {elapsed}s')
+            else:
+                spinner.succeed(f'Agent response generated in {elapsed}s')
+
+            # Display the response
+            response = result.get('response', '')
+            console.print(f'\n{response}\n')
+
+            # Show execution results if any
+            execution_results = result.get('execution_results', [])
+            if execution_results:
+                console.print("🔧 [bold blue]Agent Actions Executed:[/bold blue]")
+                for i, exec_result in enumerate(execution_results, 1):
+                    if exec_result.get('success'):
+                        console.print(f"  {i}. ✅ {exec_result.get('tool', 'Unknown')}")
+                    else:
+                        console.print(f"  {i}. ❌ {exec_result.get('tool', 'Unknown')}: {exec_result.get('error', 'Failed')}")
+                console.print()
+        else:
+            # Agent processing failed
+            spinner.fail(f'Agent processing failed after {spinner.get_elapsed_time()}s')
+            error_msg = result.get('error', 'Unknown agent error')
+            Utils.log_error(f'Agent error: {error_msg}')
+
+            # Fallback to simple response if available
+            response = result.get('response', '')
+            if response:
+                console.print(f'\n{response}\n')
+
+            sys.exit(1)
+
+    except Exception as error:
+        # Agent system error
+        spinner.fail(f'Agent system error after {spinner.get_elapsed_time()}s')
+        Utils.log_error(f'Agent system failed: {error}')
+        Utils.log_info('Falling back to simple mode...')
+
+        # Fallback to simple prompt handling
+        await handle_simple_prompt(provider, api_key, prompt, options, config)
 
 
 def cli():

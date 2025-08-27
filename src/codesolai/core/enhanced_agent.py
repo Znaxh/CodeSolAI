@@ -121,9 +121,9 @@ class EnhancedAgent(Agent):
             # Step 2: Parse actions from the response
             parsed_actions = self._parse_actions_from_response(llm_response['response'])
             
-            # Step 3: Execute actions if agent mode is enabled and actions are found
+            # Step 3: Execute actions if tools are enabled and actions are found
             execution_results = []
-            if process_options.get('agent', False) and parsed_actions and self.config.tools_enabled:
+            if parsed_actions and self.config.tools_enabled:
                 execution_results = await self._execute_parsed_actions(
                     parsed_actions, 
                     process_options
@@ -162,12 +162,34 @@ class EnhancedAgent(Agent):
             }
 
     async def _get_llm_response(self, prompt: str, options: Dict[str, Any]) -> Dict[str, Any]:
-        """Get response from LLM provider"""
+        """Get response from LLM provider with agent capabilities"""
         try:
+            # Enhance the prompt with agent capabilities if tools are enabled
+            enhanced_prompt = prompt
+            if options.get('tools_enabled', True):
+                enhanced_prompt = f"""You are CodeSolAI, an AI assistant with the ability to perform actions using tools.
+
+Available tools:
+- read_file: Read file contents
+- write_file: Write content to a file
+- list_directory: List directory contents
+- create_directory: Create a directory
+- execute_command: Execute shell commands
+- analyze_code: Analyze code structure
+- http_request: Make HTTP requests
+
+When you need to perform an action, use this format:
+ACTION: tool_name
+PARAMETERS: {{"param1": "value1", "param2": "value2"}}
+
+User request: {prompt}
+
+Please provide a helpful response and use tools when appropriate to complete the task."""
+
             response = await self.provider_manager.call(
                 options['provider'],
                 options['api_key'],
-                prompt,
+                enhanced_prompt,
                 {
                     'model': options.get('model'),
                     'temperature': options.get('temperature'),
@@ -190,27 +212,216 @@ class EnhancedAgent(Agent):
 
     def _parse_actions_from_response(self, response: str) -> list:
         """Parse actions from LLM response"""
-        # This would implement action parsing logic
-        # For now, return empty list as actions are not fully implemented
-        return []
+        import re
+        import json
+
+        actions = []
+
+        # Look for ACTION: and PARAMETERS: patterns
+        action_pattern = r'ACTION:\s*(\w+)\s*\nPARAMETERS:\s*(\{.*?\})'
+        matches = re.findall(action_pattern, response, re.DOTALL | re.IGNORECASE)
+
+        for match in matches:
+            tool_name = match[0].strip()
+            try:
+                parameters = json.loads(match[1])
+
+                # Normalize and provide default parameters for common tools
+                if tool_name == 'list_directory':
+                    # Handle different parameter names
+                    if 'directory' in parameters:
+                        parameters['path'] = parameters.pop('directory')
+                    if 'hidden' in parameters:
+                        parameters['include_hidden'] = parameters.pop('hidden')
+                    if not parameters.get('path'):
+                        parameters['path'] = '.'
+                elif tool_name == 'read_file':
+                    if 'file' in parameters:
+                        parameters['path'] = parameters.pop('file')
+                    if 'file_path' in parameters:
+                        parameters['path'] = parameters.pop('file_path')
+                    if 'filepath' in parameters:
+                        parameters['path'] = parameters.pop('filepath')
+                    if not parameters.get('path'):
+                        continue  # Skip if no path provided
+                elif tool_name == 'write_file':
+                    if 'file' in parameters:
+                        parameters['path'] = parameters.pop('file')
+                    if 'file_path' in parameters:
+                        parameters['path'] = parameters.pop('file_path')
+                    if 'filepath' in parameters:
+                        parameters['path'] = parameters.pop('filepath')
+                    if not parameters.get('path'):
+                        continue  # Skip if no path provided
+
+                actions.append({
+                    'tool': tool_name,
+                    'parameters': parameters
+                })
+            except json.JSONDecodeError:
+                self.logger.warning('Failed to parse action parameters', {
+                    'tool': tool_name,
+                    'raw_parameters': match[1]
+                })
+
+                # Try to create action with default parameters
+                if tool_name == 'list_directory':
+                    actions.append({
+                        'tool': 'list_directory',
+                        'parameters': {'path': '.'}
+                    })
+
+        # Also look for simpler patterns like "create file: filename.py"
+        simple_patterns = [
+            (r'create file[:\s]+([^\s\n]+)', 'write_file'),
+            (r'read file[:\s]+([^\s\n]+)', 'read_file'),
+            (r'list directory[:\s]+([^\s\n]+)', 'list_directory'),
+            (r'run command[:\s]+([^\n]+)', 'execute_command'),
+            (r'execute[:\s]+([^\n]+)', 'execute_command')
+        ]
+
+        for pattern, tool_name in simple_patterns:
+            matches = re.findall(pattern, response, re.IGNORECASE)
+            for match in matches:
+                if tool_name == 'write_file':
+                    actions.append({
+                        'tool': 'write_file',
+                        'parameters': {'path': match, 'content': '# Generated file\n'}
+                    })
+                elif tool_name == 'read_file':
+                    actions.append({
+                        'tool': 'read_file',
+                        'parameters': {'path': match}
+                    })
+                elif tool_name == 'list_directory':
+                    actions.append({
+                        'tool': 'list_directory',
+                        'parameters': {'path': match}
+                    })
+                elif tool_name == 'execute_command':
+                    actions.append({
+                        'tool': 'execute_command',
+                        'parameters': {'command': match}
+                    })
+
+        return actions
 
     async def _execute_parsed_actions(self, actions: list, options: Dict[str, Any]) -> list:
-        """Execute parsed actions"""
-        # This would implement action execution
-        # For now, return empty list as actions are not fully implemented
-        return []
+        """Execute parsed actions using the tool registry"""
+        if not actions:
+            return []
 
-    async def _generate_final_response(self, original_prompt: str, llm_response: str, 
-                                     actions: list, execution_results: list, 
+        results = []
+        conversation_id = f"agent-{self.id}"
+
+        for action in actions:
+            try:
+                tool_name = action.get('tool')
+                parameters = action.get('parameters', {})
+
+                self.logger.info('Executing action', {
+                    'tool': tool_name,
+                    'parameters': parameters
+                })
+
+                # Check if user approval is needed
+                if not options.get('auto_approve', True) and options.get('confirmation_required', False):
+                    # In a real implementation, this would prompt the user
+                    # For now, we'll assume approval
+                    pass
+
+                # Execute the tool
+                result = await self.tool_registry.execute_tool(
+                    tool_name,
+                    parameters,
+                    conversation_id
+                )
+
+                results.append(result)
+
+                self.logger.info('Action executed', {
+                    'tool': tool_name,
+                    'success': result.get('success', False),
+                    'result_keys': list(result.keys()) if isinstance(result, dict) else 'not_dict',
+                    'result_preview': str(result)[:200] if result else 'empty_result'
+                })
+
+            except Exception as error:
+                self.logger.error('Action execution failed', {
+                    'action': action,
+                    'error': str(error)
+                })
+                results.append({
+                    'success': False,
+                    'error': str(error),
+                    'tool': action.get('tool', 'unknown'),
+                    'parameters': action.get('parameters', {})
+                })
+
+        return results
+
+    async def _generate_final_response(self, original_prompt: str, llm_response: str,
+                                     actions: list, execution_results: list,
                                      options: Dict[str, Any]) -> str:
         """Generate final response incorporating action results"""
         # If no actions were executed, return the original LLM response
         if not execution_results:
             return llm_response
-        
-        # If actions were executed, we could enhance the response
-        # For now, just return the original response
-        return llm_response
+
+        # Build enhanced response with action results
+        enhanced_response = llm_response + "\n\n"
+
+        # Add results from executed actions
+        for i, result in enumerate(execution_results, 1):
+            if result.get('success'):
+                tool_name = result.get('tool', 'Unknown')
+                # Handle nested result structure from tool registry
+                tool_result = result.get('result', {})
+                if isinstance(tool_result, dict) and 'result' in tool_result:
+                    tool_result = tool_result['result']
+
+                if tool_name == 'list_directory':
+                    items = tool_result.get('items', [])
+                    enhanced_response += f"📁 **Directory listing for {tool_result.get('path', '.')}:**\n"
+                    if items:
+                        for item in items[:20]:  # Limit to first 20 items
+                            icon = "📁" if item['type'] == 'directory' else "📄"
+                            enhanced_response += f"  {icon} {item['name']}\n"
+                        if len(items) > 20:
+                            enhanced_response += f"  ... and {len(items) - 20} more items\n"
+                    else:
+                        enhanced_response += "  (empty directory)\n"
+
+                elif tool_name == 'read_file':
+                    content = tool_result.get('content', '')
+                    path = tool_result.get('path', 'file')
+                    enhanced_response += f"📄 **Contents of {path}:**\n```\n{content[:1000]}\n```\n"
+                    if len(content) > 1000:
+                        enhanced_response += "... (content truncated)\n"
+
+                elif tool_name == 'execute_command':
+                    command = tool_result.get('command', '')
+                    stdout = tool_result.get('stdout', '')
+                    stderr = tool_result.get('stderr', '')
+                    return_code = tool_result.get('return_code', 0)
+
+                    enhanced_response += f"💻 **Command executed:** `{command}`\n"
+                    enhanced_response += f"**Exit code:** {return_code}\n"
+                    if stdout:
+                        enhanced_response += f"**Output:**\n```\n{stdout[:1000]}\n```\n"
+                    if stderr:
+                        enhanced_response += f"**Errors:**\n```\n{stderr[:500]}\n```\n"
+
+                else:
+                    # Generic result display
+                    enhanced_response += f"🔧 **{tool_name} result:**\n{str(tool_result)[:500]}\n"
+            else:
+                # Show failed actions
+                error = result.get('error', 'Unknown error')
+                tool_name = result.get('tool', 'Unknown')
+                enhanced_response += f"❌ **{tool_name} failed:** {error}\n"
+
+        return enhanced_response
 
     async def test_connection(self, provider: str, api_key: str) -> Dict[str, Any]:
         """Test connection to provider"""

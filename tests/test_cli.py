@@ -30,18 +30,16 @@ class TestCLI:
         assert 'CodeSolAI' in result.output
         assert 'Usage:' in result.output
 
-    @patch('codesolai.cli.Setup')
-    @patch('codesolai.cli.asyncio.run')
-    def test_setup_option(self, mock_asyncio_run, mock_setup_class):
+    def test_setup_option(self):
         """Test --setup option"""
-        mock_setup = MagicMock()
-        mock_setup_class.return_value = mock_setup
-        
-        result = self.runner.invoke(main, ['--setup'])
-        
+        # Test that setup option is recognized and starts setup process
+        # We provide 'n' to decline updating existing config, which should exit gracefully
+        result = self.runner.invoke(main, ['--setup'], input='n\n')
+
+        # Setup should start and exit gracefully when user declines
         assert result.exit_code == 0
-        mock_setup_class.assert_called_once()
-        mock_asyncio_run.assert_called_once()
+        assert 'Welcome to CodeSolAI CLI Setup!' in result.output
+        assert 'Configuration file already exists' in result.output
 
     @patch('codesolai.cli.Config')
     def test_config_option(self, mock_config_class):
@@ -115,25 +113,19 @@ class TestCLI:
 
     @patch('codesolai.cli.Utils')
     @patch('codesolai.cli.Config')
-    @patch('codesolai.cli.asyncio.run')
-    def test_no_provider_configured(self, mock_asyncio_run, mock_config_class, mock_utils):
+    def test_no_provider_configured(self, mock_config_class, mock_utils):
         """Test error when no provider is configured"""
         # Mock config with no default provider
         mock_config = MagicMock()
         mock_config.get_config.return_value = {'defaultProvider': None}
+        mock_config.get_api_key.return_value = None
         mock_config_class.return_value = mock_config
-        
-        # Mock async_main to handle the no provider case
-        def mock_async_main_func(**kwargs):
-            if not kwargs.get('provider') and not mock_config.get_config()['defaultProvider']:
-                mock_utils.log_error('No provider configured.')
-                import sys
-                sys.exit(1)
-        
-        mock_asyncio_run.side_effect = lambda coro: mock_async_main_func()
-        
-        with pytest.raises(SystemExit):
-            self.runner.invoke(main, ['Hello world'])
+
+        # The CLI should exit when no provider is configured
+        result = self.runner.invoke(main, ['Hello world'])
+
+        # Check that it exited with error code
+        assert result.exit_code == 1
 
     @patch('codesolai.cli.InteractiveSession')
     @patch('codesolai.cli.Config')
