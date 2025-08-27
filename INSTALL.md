@@ -60,13 +60,13 @@ codesolai --setup
 ### Option 2: Environment Variables
 ```bash
 # For Claude (Anthropic)
-export CLAUDE_API_KEY="sk-ant-your-key-here"
+export CLAUDE_API_KEY="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # For GPT (OpenAI)
-export GPT_API_KEY="sk-your-key-here"
+export GPT_API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # For Gemini (Google)
-export GEMINI_API_KEY="your-key-here"
+export GEMINI_API_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 ### Option 3: Configuration File

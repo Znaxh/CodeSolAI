@@ -341,9 +341,7 @@ Please provide a helpful response and use tools when appropriate to complete the
 
                 self.logger.info('Action executed', {
                     'tool': tool_name,
-                    'success': result.get('success', False),
-                    'result_keys': list(result.keys()) if isinstance(result, dict) else 'not_dict',
-                    'result_preview': str(result)[:200] if result else 'empty_result'
+                    'success': result.get('success', False)
                 })
 
             except Exception as error:

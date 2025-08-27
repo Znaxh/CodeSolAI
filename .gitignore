@@ -180,3 +180,62 @@ Thumbs.db
 # CodeSolAI specific
 .codesolairc
 .codesolairc.example
+
+# Sensitive files - DO NOT COMMIT
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+config.json
+secrets.json
+api_keys.txt
+
+# User configuration files
+.codesolai/
+.codesolai.json
+.codesolai.yaml
+.codesolai.yml
+
+# Logs and debugging
+*.log
+logs/
+debug.log
+error.log
+access.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# Test artifacts
+test_output/
+test_results/
+coverage_html/
+.coverage.*
+htmlcov/
+
+# Development files
+.vscode/settings.json
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Runtime files
+*.pid
+*.sock
+*.lock
