@@ -304,7 +304,7 @@ This demonstrates the AI's sophisticated understanding of software development:
 
 ### Before/After Comparison
 
-![Alt text](https://github.com/USERNAME/REPO_NAME/blob/main/assets/my-image.png?raw=true)
+![Alt text](https://github.com/Znaxh/CodeSolAI/blob/main/images/image.png?raw=true)
 
 ## Getting Started Guide
 
