@@ -156,7 +156,10 @@ After execution completes, you'll see:
 4. Register a new account or login to test authentication
 ```
 
+![Alt text](https://github.com/Znaxh/CodeSolAI/blob/main/images/task.png?raw=true)
+
 ## Deep Dive: AI-Generated Code Quality
+
 
 ### The Power of One Command
 
@@ -262,7 +265,7 @@ def register():
 
 ### AI Task Decomposition: From Natural Language to Executable Plan
 
-**[DIAGRAM NEEDED]**: Visual flow showing intelligent task breakdown process
+![Alt text](https://github.com/Znaxh/CodeSolAI/blob/main/images/ChatGPT%20Image%20Aug%2028,%202025,%2008_52_04%20PM.png?raw=true)
 
 This demonstrates the AI's sophisticated understanding of software development:
 
@@ -304,7 +307,7 @@ This demonstrates the AI's sophisticated understanding of software development:
 
 ### Before/After Comparison
 
-![Alt text](https://github.com/Znaxh/CodeSolAI/blob/main/images/image.png?raw=true)
+![Alt text](https://github.com/USERNAME/REPO_NAME/blob/main/assets/my-image.png?raw=true)
 
 ## Getting Started Guide
 
