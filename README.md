@@ -1,6 +1,14 @@
 <h1 align="center">
-    <img src="https://github.com/Znaxh/codesolai/blob/main/images/codesolai_logo.png?raw=true" height="100" width="375" alt="banner" /><br>
+    <img src="https://github.com/Znaxh/codesolai/blob/main/images/codesolai_logo-png.png?raw=true" height="100" width="375" alt="banner" /><br>
 </h1>
+
+<div align="center">
+
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Znaxh/codesolai)
+<img src="https://upload.wikimedia.org/wikipedia/commons/0/0d/Medium_%28website%29_logo.svg" alt="Medium Logo" width="100"/>
+</div>
+
+
 # CodeSolAI
 
 **CodeSolAI** is a fully autonomous agentic CLI tool for interacting with large language models (LLMs) like Claude, Gemini, and GPT. It provides both simple chat interactions and sophisticated agent capabilities for autonomous task execution.
