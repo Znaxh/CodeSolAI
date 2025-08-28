@@ -3,10 +3,14 @@
 </h1>
 
 <div align="center">
-
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Znaxh/codesolai)
 <a href="https://medium.com/@znaxxh/codesolai-7c78a050b759">
-  <img src="https://cdn.worldvectorlogo.com/logos/wordmark-white-medium.svg" alt="Medium Logo" width="100"/>
+  <img 
+    src="https://logos-world.net/wp-content/uploads/2023/07/Medium-Emblem.png" 
+    alt="Medium Logo" 
+    height="30" 
+    width="100" 
+    style="object-fit: cover; object-position: center; border-radius: 5px; border: 2px solid white;"
+  />
 </a>
 </div>
 
