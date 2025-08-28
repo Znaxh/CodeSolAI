@@ -29,7 +29,7 @@ class ReasoningEngine:
         # Initialize provider manager for LLM calls
         self.provider_manager = ProviderManager()
         
-        self.logger.info('Reasoning engine initialized', {
+        self.logger.debug('Reasoning engine initialized', {
             'effort': effort,
             'max_iterations': max_iterations,
             'enable_reflection': enable_reflection,

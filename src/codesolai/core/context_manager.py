@@ -33,7 +33,7 @@ class ContextManager:
             }
         }
         
-        self.logger.info('Context manager initialized', {
+        self.logger.debug('Context manager initialized', {
             'max_size': max_size,
             'compression_threshold': compression_threshold,
             'retention_strategy': retention_strategy

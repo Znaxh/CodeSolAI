@@ -91,7 +91,7 @@ class TaskManager:
         self.on_task_failed: Optional[Callable] = None
         self.on_all_complete: Optional[Callable] = None
         
-        self.logger.info("Task manager initialized")
+        self.logger.debug("Task manager initialized")
     
     def create_task(self, name: str, description: str, parent_id: Optional[str] = None, 
                    metadata: Optional[Dict[str, Any]] = None) -> str:

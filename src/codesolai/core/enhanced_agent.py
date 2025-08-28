@@ -41,7 +41,7 @@ class EnhancedAgent(Agent):
             max_context_size=options.get('max_context_size', 100000),
             compression_threshold=options.get('compression_threshold', 0.8),
             retention_strategy=options.get('retention_strategy', 'importance'),
-            log_level=options.get('log_level', 'info'),
+            log_level=options.get('log_level', 'warning'),
             enable_metrics=options.get('enable_metrics', True),
             enable_tracing=options.get('enable_tracing', False)
         )
@@ -66,7 +66,7 @@ class EnhancedAgent(Agent):
         self.autonomous_mode = options.get('autonomous', False)
 
         # Debug logging
-        self.logger.info('Enhanced agent autonomous mode', {
+        self.logger.debug('Enhanced agent autonomous mode', {
             'autonomous_mode': self.autonomous_mode,
             'auto_approve': config.auto_approve
         })
@@ -77,7 +77,7 @@ class EnhancedAgent(Agent):
         self.task_manager.on_task_failed = self._on_task_failed
         self.task_manager.on_all_complete = self._on_all_tasks_complete
 
-        self.logger.info('Enhanced agent initialized', {
+        self.logger.debug('Enhanced agent initialized', {
             'provider': config.provider,
             'model': config.model,
             'tools_enabled': config.tools_enabled,
@@ -122,7 +122,7 @@ class EnhancedAgent(Agent):
                 **options
             }
 
-            self.logger.info('Processing prompt in autonomous mode', {
+            self.logger.debug('Processing prompt in autonomous mode', {
                 'prompt_length': len(prompt),
                 'provider': process_options['provider'],
                 'model': process_options['model']

@@ -76,7 +76,7 @@ class AgentConfig:
     sandbox_mode: bool = False
     
     # Logging settings
-    log_level: str = "info"
+    log_level: str = "warning"  # Changed from "info" to reduce verbosity
     enable_metrics: bool = True
     enable_tracing: bool = False
 
@@ -147,7 +147,7 @@ class Agent:
         # Setup event handlers
         self.setup_event_handlers()
         
-        self.logger.info('Agent initialized', {
+        self.logger.debug('Agent initialized', {
             'id': self.id,
             'name': self.name,
             'config': self.config.__dict__
@@ -213,7 +213,7 @@ class Agent:
         options = options or {}
 
         try:
-            self.logger.info('Processing input', {
+            self.logger.debug('Processing input', {
                 'conversation_id': conversation_id,
                 'input_length': len(input_text),
                 'options': options
@@ -317,7 +317,7 @@ class Agent:
 
     async def shutdown(self):
         """Shutdown the agent and cleanup resources"""
-        self.logger.info('Shutting down agent', {'id': self.id})
+        self.logger.debug('Shutting down agent', {'id': self.id})
         
         # Cleanup components
         if hasattr(self.tool_registry, 'shutdown'):

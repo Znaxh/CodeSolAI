@@ -294,7 +294,9 @@ async def handle_agent_prompt(provider: str, api_key: str, prompt: str,
             'tools_enabled': True,
             'auto_approve': autonomous_mode,
             'confirmation_required': not autonomous_mode,
-            'autonomous': autonomous_mode  # Explicitly pass autonomous flag
+            'autonomous': autonomous_mode,  # Explicitly pass autonomous flag
+            'log_level': 'debug' if options.get('debug') else 'warning',  # Set log level based on debug flag
+            'enable_tracing': options.get('trace', False)
         }
 
         spinner.start('Initializing agent')

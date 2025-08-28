@@ -21,7 +21,7 @@ class ConversationManager:
         self.on_conversation_start: Optional[Callable] = None
         self.on_conversation_end: Optional[Callable] = None
         
-        self.logger.info('Conversation manager initialized', {'agent_id': agent_id})
+        self.logger.debug('Conversation manager initialized', {'agent_id': agent_id})
 
     async def start_conversation(self, conversation_data: Dict[str, Any]) -> Dict[str, Any]:
         """Start a new conversation"""

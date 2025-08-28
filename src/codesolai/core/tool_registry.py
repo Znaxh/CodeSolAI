@@ -31,7 +31,7 @@ class ToolRegistry:
         self.tools = {}
         self._register_default_tools()
         
-        self.logger.info('Tool registry initialized', {
+        self.logger.debug('Tool registry initialized', {
             'max_concurrent': max_concurrent,
             'tools_count': len(self.tools)
         })
