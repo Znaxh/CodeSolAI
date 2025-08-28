@@ -1,3 +1,8 @@
+<h1 align="center">
+    <img src="https://github.com/Znaxh/CodeSolAI/blob/main/images/codesolai_logo-png.png?raw=true" height="100" width="375" alt="banner" /><br>
+</h1>
+
+
 # CodeSolAI
 
 A fully autonomous agentic CLI tool for interacting with large language models, featuring sophisticated task decomposition, real-time progress tracking, and comprehensive file creation capabilities.
