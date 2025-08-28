@@ -97,7 +97,10 @@ codesolai --agent --autonomous "Set up a Flask web app with authentication"
 
 ### Step 3: AI Agent in Action - Real-Time Task Decomposition
 
-**[GIF NEEDED]**: Real-time progress tracking showing intelligent task breakdown and execution
+<div align="center">
+  <img src="https://github.com/Znaxh/CodeSolAI/blob/main/images/gif.gif?raw=true" alt="gif" />
+</div>
+
 
 Watch as the AI agent thinks and plans like a senior developer:
 
@@ -283,7 +286,11 @@ This demonstrates the AI's sophisticated understanding of software development:
 ## Visual Documentation
 
 ### Real-Time Progress Tracking
-**[GIF NEEDED]**: Show the live progress bars updating as tasks complete, with timing information and status changes
+
+<div align="center">
+  <img src="https://github.com/Znaxh/CodeSolAI/blob/main/images/hello2.gif?raw=true" alt="gif" />
+</div>
+
 
 ### Complete Demo Video
 **[VIDEO NEEDED]**: 30-60 second video showing:
