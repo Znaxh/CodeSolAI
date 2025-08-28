@@ -5,7 +5,7 @@
 <div align="center">
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Znaxh/codesolai)
-<img src="https://upload.wikimedia.org/wikipedia/commons/0/0d/Medium_%28website%29_logo.svg" alt="Medium Logo" width="100"/>
+<img src="https://cdn.worldvectorlogo.com/logos/wordmark-white-medium.svg" alt="Medium Logo" width="100"/>
 </div>
 
 
