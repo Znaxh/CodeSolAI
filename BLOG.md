@@ -136,8 +136,6 @@ Watch as the AI agent thinks and plans like a senior developer:
 
 ### Step 4: Examine the Results
 
-**[SCREENSHOT NEEDED]**: Before/after directory structure comparison
-
 After execution completes, you'll see:
 
 ```
@@ -293,7 +291,10 @@ This demonstrates the AI's sophisticated understanding of software development:
 
 
 ### Complete Demo Video
-**[VIDEO NEEDED]**: 30-60 second video showing:
+
+[![Watch the video](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://youtu.be/8ftxJHt5nZo)
+
+
 1. Command execution
 2. Task decomposition display
 3. Real-time progress tracking
@@ -302,7 +303,8 @@ This demonstrates the AI's sophisticated understanding of software development:
 6. Testing authentication features
 
 ### Before/After Comparison
-**[SCREENSHOT NEEDED]**: Split-screen showing empty directory vs. complete Flask application structure
+
+![Alt text](https://github.com/USERNAME/REPO_NAME/blob/main/assets/my-image.png?raw=true)
 
 ## Getting Started Guide
 
