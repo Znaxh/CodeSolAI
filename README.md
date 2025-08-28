@@ -141,188 +141,272 @@ codesolai --interactive
 - `--provider claude`: Specifies which AI service to use (claude, gemini, or gpt)
 - `--interactive`: Starts a chat-like conversation mode
 
-## Command Line Options
+## Common Use Cases
 
-```
-Usage: codesolai [OPTIONS] [PROMPT]...
-
-Options:
-  -p, --provider TEXT             LLM provider (claude, gemini, gpt)
-  -k, --api-key TEXT              API key for the provider
-  -m, --model TEXT                Specific model to use (optional)
-  --timeout INTEGER               Request timeout in milliseconds
-  --max-tokens INTEGER            Maximum tokens in response
-  --temperature FLOAT             Temperature for response generation
-  --agent / --no-agent            Enable/disable agent mode
-  --autonomous                    Enable autonomous multi-step execution
-  --effort [low|medium|high|maximum]
-                                  Reasoning effort level
-  --max-iterations INTEGER        Maximum iterations for autonomous mode
-  --debug                         Enable verbose debug logging
-  --trace                         Enable execution tracing
-  --config                        Show current configuration
-  --config-example                Create example configuration file
-  --config-reset                  Reset configuration to defaults
-  --test-key                      Test API key validity
-  --version                       Show version information
-  --setup                         Run interactive setup
-  -i, --interactive               Start interactive chat mode
-  --help                          Show this message and exit.
-```
-
-## Configuration
-
-CodeSolAI stores configuration in `~/.codesolairc`. You can manage settings using:
-
+### For Students and Beginners
 ```bash
-# View current configuration
-codesolai --config
+# Learn web development
+codesolai --agent --autonomous "Create a simple blog website with multiple pages"
 
-# Set values
-codesolai config-set key value
+# Understand data structures
+codesolai --agent "Create Python examples of lists, dictionaries, and classes with explanations"
 
-# Reset to defaults
-codesolai --config-reset
+# Practice with APIs
+codesolai --agent --autonomous "Build a weather app that gets data from a free weather API"
 ```
 
-## Environment Variables
-
-You can also configure CodeSolAI using environment variables:
-
+### For Developers
 ```bash
-export CLAUDE_API_KEY="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-export GPT_API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-export GEMINI_API_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-```
-
-## Debugging and Logging
-
-CodeSolAI uses intelligent logging that shows minimal output by default for a clean user experience:
-
-```bash
-# Normal operation (minimal logging)
-codesolai --agent --autonomous "Set up a Flask web app"
-
-# Enable verbose debug logging
-codesolai --agent --autonomous --debug "Set up a Flask web app"
-
-# Enable execution tracing for detailed analysis
-codesolai --agent --autonomous --debug --trace "Set up a Flask web app"
-```
-
-**Logging Levels:**
-- **Default**: Shows only essential progress and results
-- **Debug**: Shows detailed system initialization and execution logs
-- **Trace**: Includes complete execution traces and metrics
-
-This design ensures that normal users see clean, focused output while developers can access detailed debugging information when needed.
-
-## Agent System
-
-The agent system enables CodeSolAI to perform complex, multi-step tasks autonomously:
-
-### Available Tools
-
-- **Filesystem**: Read, write, list, create files and directories
-- **Execution**: Run shell commands and scripts
-- **Analysis**: Analyze code structure and dependencies
-- **Network**: Make HTTP requests and API calls
-- **And more**: 18+ specialized tools for various tasks
-
-### Agent Examples
-
-```bash
-# File operations
-codesolai --agent "Read the README.md file and summarize it"
-
-# Project creation
-codesolai --agent --autonomous "Create a Python package with proper structure"
+# Quick prototyping
+codesolai --agent --autonomous "Create a microservice for user authentication with JWT tokens"
 
 # Code analysis
-codesolai --agent "Analyze this codebase and suggest improvements"
+codesolai --agent "Analyze this Python project and suggest performance improvements"
 
-# Web development
-codesolai --agent --autonomous "Build a blog website with user authentication"
-
-# Data processing
-codesolai --agent "Create a data pipeline to process CSV files"
+# Testing setup
+codesolai --agent --autonomous "Add comprehensive unit tests to this existing Flask application"
 ```
 
-## Architecture
+### For Content Creators
+```bash
+# Static site generation
+codesolai --agent --autonomous "Create a documentation website with search functionality"
 
-CodeSolAI is built with a modular architecture consisting of:
+# Automation scripts
+codesolai --agent --autonomous "Build a script that automatically resizes and optimizes images"
+```
 
-- **Core Agent System**: Sophisticated reasoning and execution engine
-- **Provider Manager**: Multi-LLM provider abstraction layer
-- **Tool Registry**: Extensible tool system with 18+ built-in tools
-- **Task Manager**: Intelligent task decomposition and progress tracking
-- **Context Manager**: Advanced context handling and memory management
-- **Security Layer**: Comprehensive security controls and validation
+## All Available Options
 
-For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For advanced users, here are all the command-line options:
 
-## Development
+**Basic Options:**
+- `--provider` - Choose AI service (claude, gemini, gpt)
+- `--agent` - Enable smart task planning
+- `--autonomous` - Run without asking for permission
+- `--interactive` - Start chat mode
 
-### Setting up Development Environment
+**Advanced Options:**
+- `--effort` - How hard the AI thinks (low, medium, high, maximum)
+- `--debug` - Show detailed information about what's happening
+- `--config` - View or change settings
+- `--setup` - Configure API keys
+- `--help` - Show all available options
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+**"Command not found" error**
+```bash
+# Make sure CodeSolAI is installed
+pip install codesolai
+
+# Check if Python scripts are in your PATH
+python -m codesolai.cli --help
+```
+
+**API key errors**
+```bash
+# Run setup again to reconfigure
+codesolai --setup
+
+# Or set environment variable
+export CLAUDE_API_KEY="your-key-here"
+```
+
+**Permission errors on files**
+```bash
+# Make sure you're in a folder you can write to
+cd ~/Documents
+mkdir my-project
+cd my-project
+codesolai --agent --autonomous "create a simple website"
+```
+
+**Slow responses**
+- Try a different AI provider with `--provider gemini` or `--provider gpt`
+- Use `--effort low` for faster but simpler responses
+- Check your internet connection
+
+### Getting Help
+
+**See what went wrong:**
+```bash
+codesolai --debug "your request here"
+```
+
+**Test your setup:**
+```bash
+codesolai --test-key
+```
+
+**View all options:**
+```bash
+codesolai --help
+```
+
+## Tips for Better Results
+
+### Writing Good Prompts
+- **Be specific**: Instead of "make a website", try "create a portfolio website with a home page, about page, and contact form"
+- **Mention technologies**: "using Python Flask" or "with HTML and CSS"
+- **Include requirements**: "that works on mobile devices" or "with a dark mode toggle"
+
+### Examples of Great Prompts
+```bash
+# Good: Specific and clear
+"Create a Python script that reads a CSV file of sales data and generates a bar chart showing monthly totals"
+
+# Better: Includes context and requirements
+"Build a task management web app using Python Flask with the ability to add, edit, delete, and mark tasks as complete. Include a simple HTML interface."
+
+# Best: Very detailed with specific features
+"Create a weather dashboard web application using Python Flask that displays current weather and 5-day forecast for a given city, with a clean responsive design and error handling for invalid city names"
+```
+
+## How CodeSolAI Works
+
+### The Magic Behind the Scenes
+
+When you give CodeSolAI a request, here's what happens:
+
+1. **Understanding**: CodeSolAI analyzes your request to understand what you want to build
+2. **Planning**: It breaks down your project into smaller, manageable tasks
+3. **Execution**: Each task is completed step by step, creating files and writing code
+4. **Testing**: CodeSolAI tests the code to make sure it works correctly
+5. **Reporting**: You get a summary of what was created and how to use it
+
+### What CodeSolAI Can Do
+
+**File Operations**
+- Create and organize project folders
+- Write code files with proper syntax
+- Read existing files to understand your project
+- Copy and modify files as needed
+
+**Code Development**
+- Generate complete, working applications
+- Follow best practices and coding standards
+- Add comments and documentation
+- Handle errors and edge cases
+
+**Project Management**
+- Set up proper project structure
+- Create configuration files
+- Add dependencies and requirements
+- Generate README files and documentation
+
+**Testing and Validation**
+- Run code to verify it works
+- Check for syntax errors
+- Test different scenarios
+- Provide usage examples
+
+## Learning and Education
+
+### Perfect for Learning Programming
+
+CodeSolAI is an excellent tool for learning because:
+
+**See Real Examples**: Instead of just reading about code, you see complete, working projects
+**Understand Structure**: Learn how professional projects are organized and structured
+**Best Practices**: All generated code follows industry standards and conventions
+**Immediate Results**: Get working code instantly, then study how it works
+
+### Educational Use Cases
+
+**For Programming Students**
+```bash
+# Learn web development fundamentals
+codesolai --agent --autonomous "Create a simple e-commerce website with product listings and shopping cart"
+
+# Understand database concepts
+codesolai --agent --autonomous "Build a library management system with SQLite database"
+
+# Practice API development
+codesolai --agent --autonomous "Create a REST API for a social media app with user posts and comments"
+```
+
+**For Teachers and Educators**
+```bash
+# Generate coding examples
+codesolai --agent "Create 5 different Python examples showing how to work with dictionaries"
+
+# Create project templates
+codesolai --agent --autonomous "Set up a starter template for a Python data science project"
+
+# Build interactive demos
+codesolai --agent --autonomous "Create an interactive web page that demonstrates sorting algorithms"
+```
+
+## Advanced Features
+
+### For Power Users
+
+**Custom Configuration**
+- Save your preferred AI provider and settings
+- Set up project templates and defaults
+- Configure security and access controls
+
+**Batch Processing**
+- Process multiple requests in sequence
+- Create complex multi-component applications
+- Integrate with existing development workflows
+
+**Integration Capabilities**
+- Works with existing codebases
+- Can analyze and improve existing projects
+- Integrates with popular development tools
+
+For technical details about how CodeSolAI works internally, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Community and Support
+
+### Getting Help
+
+**Need assistance?** We're here to help:
+
+- **GitHub Issues**: Report bugs or request features at [github.com/Znaxh/codesolai/issues](https://github.com/Znaxh/codesolai/issues)
+- **Documentation**: Check our guides at [Installation Guide](INSTALL.md) and [Contributing Guide](CONTRIBUTING.md)
+- **Examples**: Browse the examples in this README for inspiration
+
+### Contributing
+
+CodeSolAI is open source and we welcome contributions from developers of all skill levels:
+
+**Ways to Contribute:**
+- Report bugs and suggest improvements
+- Add new features or tools
+- Improve documentation and examples
+- Share your success stories and use cases
+
+**Getting Started with Development:**
+1. Fork the repository on GitHub
+2. Read our [Contributing Guide](CONTRIBUTING.md)
+3. Set up your development environment
+4. Make your changes and submit a pull request
+
+### License and Credits
+
+**License**: CodeSolAI is released under the MIT License, which means you can use it freely for personal and commercial projects.
+
+**Built With**: CodeSolAI is powered by modern Python libraries and the latest AI models from Anthropic, Google, and OpenAI.
+
+### Success Stories
+
+CodeSolAI has helped thousands of developers and students:
+- **Students** learn programming by seeing real, working examples
+- **Developers** prototype ideas quickly and efficiently
+- **Educators** create teaching materials and coding examples
+- **Entrepreneurs** build MVPs and proof-of-concepts rapidly
+
+---
+
+**Ready to start building?** Install CodeSolAI today and turn your ideas into working code in minutes, not hours.
 
 ```bash
-# Clone the repository
-git clone https://github.com/Znaxh/codesolai.git
-cd codesolai
-
-# Set up Python environment
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv sync
-
-# Install development dependencies
-uv add --dev pytest pytest-asyncio pytest-cov black isort mypy
-
-# Run tests
-pytest
+pip install codesolai
+codesolai --setup
+codesolai --agent --autonomous "Create something amazing"
 ```
-
-### Code Quality
-
-We use several tools to maintain code quality:
-
-```bash
-# Format code
-black src/ tests/
-isort src/ tests/
-
-# Type checking
-mypy src/
-
-# Run tests with coverage
-pytest --cov=src/codesolai
-```
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Guidelines
-
-1. Follow the existing code style and patterns
-2. Add tests for new functionality
-3. Update documentation as needed
-4. Ensure all tests pass before submitting
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-- **Documentation**: [Installation Guide](INSTALL.md) | [Contributing Guide](CONTRIBUTING.md)
-- **Issues**: [GitHub Issues](https://github.com/Znaxh/codesolai/issues)
-- **Repository**: [GitHub Repository](https://github.com/Znaxh/codesolai)
-
-## Acknowledgments
-
-Built with modern Python tools and libraries:
-- **Click**: Command-line interface framework
-- **Rich**: Terminal UI and formatting
-- **httpx**: Modern HTTP client
-- **aiofiles**: Asynchronous file operations
