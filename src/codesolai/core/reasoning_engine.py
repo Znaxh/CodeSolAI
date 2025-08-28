@@ -267,7 +267,7 @@ Be clear, helpful, and actionable in your response.
                     'parameters': parameters
                 })
             except json.JSONDecodeError:
-                self.logger.warning('Failed to parse action parameters', {
+                self.logger.warn('Failed to parse action parameters', {
                     'tool': tool_name,
                     'raw_parameters': match[1]
                 })

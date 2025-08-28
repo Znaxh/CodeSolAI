@@ -35,7 +35,7 @@ class Logger:
         
         # Metrics storage
         self.metrics = {
-            'log_counts': {'debug': 0, 'info': 0, 'warn': 0, 'error': 0},
+            'log_counts': {'debug': 0, 'info': 0, 'warning': 0, 'error': 0},
             'start_time': datetime.now(),
             'events': []
         }

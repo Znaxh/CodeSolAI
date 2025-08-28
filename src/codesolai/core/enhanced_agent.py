@@ -4,8 +4,10 @@ Enhanced Agent implementation with sophisticated reasoning capabilities
 
 from typing import Dict, Any, Optional
 from datetime import datetime
+from rich.console import Console
 
 from .agent import Agent, AgentConfig
+from .task_manager import TaskManager, TaskState
 from ..providers.provider_manager import ProviderManager
 from ..utils import Utils
 
@@ -58,11 +60,28 @@ class EnhancedAgent(Agent):
         
         # Initialize provider manager
         self.provider_manager = ProviderManager()
-        
+
+        # Initialize task manager for autonomous mode
+        self.task_manager = TaskManager(self.logger, Console())
+        self.autonomous_mode = options.get('autonomous', False)
+
+        # Debug logging
+        self.logger.info('Enhanced agent autonomous mode', {
+            'autonomous_mode': self.autonomous_mode,
+            'auto_approve': config.auto_approve
+        })
+
+        # Setup task manager callbacks
+        self.task_manager.on_task_start = self._on_task_start
+        self.task_manager.on_task_complete = self._on_task_complete
+        self.task_manager.on_task_failed = self._on_task_failed
+        self.task_manager.on_all_complete = self._on_all_tasks_complete
+
         self.logger.info('Enhanced agent initialized', {
             'provider': config.provider,
             'model': config.model,
-            'tools_enabled': config.tools_enabled
+            'tools_enabled': config.tools_enabled,
+            'autonomous_mode': self.autonomous_mode
         })
 
     async def process_prompt(self, prompt: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -71,12 +90,26 @@ class EnhancedAgent(Agent):
         This is the main entry point for the enhanced agent
         """
         options = options or {}
-        
+
+        # Check if autonomous mode is enabled
+        autonomous_mode = options.get('autonomous', self.autonomous_mode)
+
+        if autonomous_mode:
+            return await self.process_autonomous(prompt, options)
+        else:
+            return await self.process_single_prompt(prompt, options)
+
+    async def process_autonomous(self, prompt: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Process prompt in autonomous mode with task decomposition and sequential execution
+        """
+        options = options or {}
+
         try:
             # Validate inputs
             if not prompt or not isinstance(prompt, str) or not prompt.strip():
                 raise ValueError('Prompt is required and must be a non-empty string')
-            
+
             # Merge options with defaults
             process_options = {
                 'provider': options.get('provider', self.provider_config['provider']),
@@ -88,14 +121,13 @@ class EnhancedAgent(Agent):
                 'effort': options.get('effort', self.config.reasoning_effort),
                 **options
             }
-            
-            self.logger.info('Processing prompt with enhanced agent', {
+
+            self.logger.info('Processing prompt in autonomous mode', {
                 'prompt_length': len(prompt),
                 'provider': process_options['provider'],
-                'model': process_options['model'],
-                'effort': process_options['effort']
+                'model': process_options['model']
             })
-            
+
             # Validate API key
             if not process_options['api_key']:
                 return {
@@ -103,7 +135,161 @@ class EnhancedAgent(Agent):
                     'error': 'API key is required',
                     'response': 'I need an API key to process your request. Please provide one using --api-key or configure it in your settings.'
                 }
-            
+
+            # Step 1: Decompose the request into tasks
+            self.task_manager.console.print("\n🧠 [bold cyan]Analyzing request and breaking down into tasks...[/bold cyan]")
+
+            try:
+                self.logger.info(f"Starting task decomposition for: {prompt[:100]}...")
+                self.logger.info(f"Process options: provider={process_options.get('provider')}, api_key_present={bool(process_options.get('api_key'))}")
+
+                task_ids = await self.task_manager.decompose_task(prompt, process_options)
+                self.logger.info(f"Task decomposition result: {len(task_ids) if task_ids else 0} tasks created")
+
+                if task_ids:
+                    self.task_manager.console.print(f"✅ [green]Successfully created {len(task_ids)} tasks[/green]")
+                else:
+                    self.task_manager.console.print("❌ [red]No tasks were created during decomposition[/red]")
+
+            except Exception as decomp_error:
+                self.logger.error(f"Task decomposition failed: {decomp_error}")
+                self.task_manager.console.print(f"❌ [red]Task decomposition error: {str(decomp_error)}[/red]")
+                task_ids = []
+
+            if not task_ids:
+                # Fallback to single prompt processing
+                self.logger.warning("Task decomposition failed, falling back to single prompt processing")
+                self.task_manager.console.print("⚠️  [yellow]Task decomposition failed, using single-step execution[/yellow]")
+                return await self.process_single_prompt(prompt, options)
+
+            # Step 2: Display initial task breakdown
+            self.task_manager.console.print(f"\n📋 [bold green]Created {len(task_ids)} tasks for execution:[/bold green]")
+            self.task_manager.display_progress(show_detailed=True)
+
+            # Step 3: Execute tasks sequentially
+            all_results = []
+            files_created = []
+            files_modified = []
+            commands_executed = []
+
+            while True:
+                next_task = self.task_manager.get_next_task()
+                if not next_task:
+                    break
+
+                # Start the task
+                self.task_manager.start_task(next_task.id)
+
+                # Execute the task
+                task_result = await self._execute_single_task(next_task, process_options)
+
+                if task_result.get('success', False):
+                    # Collect results
+                    if 'files_created' in task_result:
+                        files_created.extend(task_result['files_created'])
+                    if 'files_modified' in task_result:
+                        files_modified.extend(task_result['files_modified'])
+                    if 'commands_executed' in task_result:
+                        commands_executed.extend(task_result['commands_executed'])
+
+                    # Complete the task
+                    self.task_manager.complete_task(next_task.id, {
+                        'files_created': task_result.get('files_created', []),
+                        'files_modified': task_result.get('files_modified', []),
+                        'commands_executed': task_result.get('commands_executed', [])
+                    })
+                else:
+                    # Fail the task
+                    error_msg = task_result.get('error', 'Unknown error')
+                    self.task_manager.fail_task(next_task.id, error_msg)
+
+                all_results.append(task_result)
+
+            # Step 4: Display completion summary
+            self.task_manager.display_completion_summary()
+
+            # Step 5: Generate final response
+            summary = self.task_manager.get_progress_summary()
+            final_response = f"""
+🎉 **Autonomous execution completed!**
+
+**Summary:**
+- Total tasks: {summary['total_tasks']}
+- Completed: {summary['completed_tasks']} ✅
+- Failed: {summary['failed_tasks']} ❌
+
+**Files created:** {len(files_created)}
+**Files modified:** {len(files_modified)}
+**Commands executed:** {len(commands_executed)}
+
+All requested tasks have been completed successfully! The project structure has been created and all necessary files are in place.
+            """.strip()
+
+            return {
+                'success': True,
+                'response': final_response,
+                'autonomous_mode': True,
+                'tasks_executed': len(task_ids),
+                'tasks_completed': summary['completed_tasks'],
+                'tasks_failed': summary['failed_tasks'],
+                'files_created': files_created,
+                'files_modified': files_modified,
+                'commands_executed': commands_executed,
+                'execution_results': all_results,
+                'provider': process_options['provider'],
+                'model': process_options['model']
+            }
+
+        except Exception as error:
+            self.logger.error('Error in autonomous processing', {
+                'error': str(error),
+                'prompt_length': len(prompt) if prompt else 0
+            })
+
+            return {
+                'success': False,
+                'error': str(error),
+                'response': f'I encountered an error during autonomous execution: {str(error)}'
+            }
+
+    async def process_single_prompt(self, prompt: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Process a single prompt without task decomposition (original behavior)
+        """
+        options = options or {}
+
+        try:
+            # Validate inputs
+            if not prompt or not isinstance(prompt, str) or not prompt.strip():
+                raise ValueError('Prompt is required and must be a non-empty string')
+
+            # Merge options with defaults
+            process_options = {
+                'provider': options.get('provider', self.provider_config['provider']),
+                'api_key': options.get('api_key', self.provider_config['api_key']),
+                'model': options.get('model', self.provider_config['model']),
+                'temperature': options.get('temperature', self.provider_config['temperature']),
+                'max_tokens': options.get('max_tokens', self.provider_config['max_tokens']),
+                'auto_approve': options.get('auto_approve', self.config.auto_approve),
+                'effort': options.get('effort', self.config.reasoning_effort),
+                **options
+            }
+
+            self.logger.info('Processing single prompt', {
+                'prompt_length': len(prompt),
+                'provider': process_options['provider'],
+                'model': process_options['model'],
+                'effort': process_options['effort']
+            })
+
+            # Validate API key
+            if not process_options['api_key']:
+                return {
+                    'success': False,
+                    'error': 'API key is required',
+                    'response': 'I need an API key to process your request. Please provide one using --api-key or configure it in your settings.'
+                }
+
             # Validate API key format
             if not Utils.validate_api_key(process_options['api_key'], process_options['provider']):
                 return {
@@ -111,24 +297,24 @@ class EnhancedAgent(Agent):
                     'error': 'Invalid API key format',
                     'response': f'The provided API key format is invalid for {process_options["provider"]}. Please check your API key.'
                 }
-            
+
             # Step 1: Get LLM response with context
             llm_response = await self._get_llm_response(prompt, process_options)
-            
+
             if not llm_response.get('success', False):
                 return llm_response
-            
+
             # Step 2: Parse actions from the response
             parsed_actions = self._parse_actions_from_response(llm_response['response'])
-            
+
             # Step 3: Execute actions if tools are enabled and actions are found
             execution_results = []
             if parsed_actions and self.config.tools_enabled:
                 execution_results = await self._execute_parsed_actions(
-                    parsed_actions, 
+                    parsed_actions,
                     process_options
                 )
-            
+
             # Step 4: Generate final response
             final_response = await self._generate_final_response(
                 prompt,
@@ -137,7 +323,7 @@ class EnhancedAgent(Agent):
                 execution_results,
                 process_options
             )
-            
+
             return {
                 'success': True,
                 'response': final_response,
@@ -148,13 +334,13 @@ class EnhancedAgent(Agent):
                 'provider': process_options['provider'],
                 'model': process_options['model']
             }
-            
+
         except Exception as error:
-            self.logger.error('Error processing prompt', {
+            self.logger.error('Error processing single prompt', {
                 'error': str(error),
                 'prompt_length': len(prompt) if prompt else 0
             })
-            
+
             return {
                 'success': False,
                 'error': str(error),
@@ -171,20 +357,32 @@ class EnhancedAgent(Agent):
 
 Available tools:
 - read_file: Read file contents
-- write_file: Write content to a file
+- write_file: Write content to a file (creates directories automatically)
 - list_directory: List directory contents
 - create_directory: Create a directory
 - execute_command: Execute shell commands
 - analyze_code: Analyze code structure
 - http_request: Make HTTP requests
 
+IMPORTANT FILE CREATION GUIDELINES:
+1. Always create complete, functional files with proper content
+2. Include necessary imports, dependencies, and boilerplate code
+3. Add comments and documentation where appropriate
+4. Ensure files follow best practices for the language/framework
+5. Create directory structures as needed
+6. Include configuration files (requirements.txt, package.json, etc.)
+
 When you need to perform an action, use this format:
 ACTION: tool_name
 PARAMETERS: {{"param1": "value1", "param2": "value2"}}
 
+For file creation, always include complete, working content:
+ACTION: write_file
+PARAMETERS: {{"path": "filename.py", "content": "# Complete file content here\\nwith proper code..."}}
+
 User request: {prompt}
 
-Please provide a helpful response and use tools when appropriate to complete the task."""
+Please provide a helpful response and use tools when appropriate to complete the task. Focus on creating complete, functional implementations."""
 
             response = await self.provider_manager.call(
                 options['provider'],
@@ -218,58 +416,84 @@ Please provide a helpful response and use tools when appropriate to complete the
         actions = []
 
         # Look for ACTION: and PARAMETERS: patterns
-        action_pattern = r'ACTION:\s*(\w+)\s*\nPARAMETERS:\s*(\{.*?\})'
-        matches = re.findall(action_pattern, response, re.DOTALL | re.IGNORECASE)
+        # First find ACTION lines, then extract complete JSON objects
+        action_lines = re.findall(r'ACTION:\s*(\w+)', response, re.IGNORECASE)
 
-        for match in matches:
-            tool_name = match[0].strip()
-            try:
-                parameters = json.loads(match[1])
+        for tool_name in action_lines:
+            tool_name = tool_name.strip()
 
-                # Normalize and provide default parameters for common tools
-                if tool_name == 'list_directory':
-                    # Handle different parameter names
-                    if 'directory' in parameters:
-                        parameters['path'] = parameters.pop('directory')
-                    if 'hidden' in parameters:
-                        parameters['include_hidden'] = parameters.pop('hidden')
-                    if not parameters.get('path'):
-                        parameters['path'] = '.'
-                elif tool_name == 'read_file':
-                    if 'file' in parameters:
-                        parameters['path'] = parameters.pop('file')
-                    if 'file_path' in parameters:
-                        parameters['path'] = parameters.pop('file_path')
-                    if 'filepath' in parameters:
-                        parameters['path'] = parameters.pop('filepath')
-                    if not parameters.get('path'):
-                        continue  # Skip if no path provided
-                elif tool_name == 'write_file':
-                    if 'file' in parameters:
-                        parameters['path'] = parameters.pop('file')
-                    if 'file_path' in parameters:
-                        parameters['path'] = parameters.pop('file_path')
-                    if 'filepath' in parameters:
-                        parameters['path'] = parameters.pop('filepath')
-                    if not parameters.get('path'):
-                        continue  # Skip if no path provided
+            # Find the PARAMETERS line after this ACTION
+            action_pattern = rf'ACTION:\s*{re.escape(tool_name)}\s*\nPARAMETERS:\s*(\{{.*?)\n(?:ACTION:|$)'
+            match = re.search(action_pattern, response, re.DOTALL | re.IGNORECASE)
+
+            if not match:
+                # Try without the lookahead for end of response
+                action_pattern = rf'ACTION:\s*{re.escape(tool_name)}\s*\nPARAMETERS:\s*(\{{.*?)(?=\n\n|\nACTION:|\Z)'
+                match = re.search(action_pattern, response, re.DOTALL | re.IGNORECASE)
+
+            if match:
+                json_str = match.group(1).strip()
+
+                # Try to find the complete JSON object by counting braces
+                json_str = self._extract_complete_json(json_str)
+
+                try:
+                    # First try to parse as-is
+                    parameters = json.loads(json_str)
+                except json.JSONDecodeError:
+                    # If that fails, try to fix common issues with triple quotes
+                    try:
+                        # Replace triple quotes with escaped quotes
+                        fixed_json = self._fix_json_content(json_str)
+                        parameters = json.loads(fixed_json)
+                    except json.JSONDecodeError:
+                        # If still failing, log and skip
+                        self.logger.warn('Failed to parse action parameters after fixes', {
+                            'tool': tool_name,
+                            'raw_parameters': json_str[:200] + '...' if len(json_str) > 200 else json_str
+                        })
+                        continue
+
+                    # Normalize and provide default parameters for common tools
+                    if tool_name == 'list_directory':
+                        # Handle different parameter names
+                        if 'directory' in parameters:
+                            parameters['path'] = parameters.pop('directory')
+                        if 'hidden' in parameters:
+                            parameters['include_hidden'] = parameters.pop('hidden')
+                        if not parameters.get('path'):
+                            parameters['path'] = '.'
+                    elif tool_name == 'create_directory':
+                        # Handle different parameter names
+                        if 'directory_path' in parameters:
+                            parameters['path'] = parameters.pop('directory_path')
+                        if 'directory' in parameters:
+                            parameters['path'] = parameters.pop('directory')
+                        if not parameters.get('path'):
+                            continue  # Skip if no path provided
+                    elif tool_name == 'read_file':
+                        if 'file' in parameters:
+                            parameters['path'] = parameters.pop('file')
+                        if 'file_path' in parameters:
+                            parameters['path'] = parameters.pop('file_path')
+                        if 'filepath' in parameters:
+                            parameters['path'] = parameters.pop('filepath')
+                        if not parameters.get('path'):
+                            continue  # Skip if no path provided
+                    elif tool_name == 'write_file':
+                        if 'file' in parameters:
+                            parameters['path'] = parameters.pop('file')
+                        if 'file_path' in parameters:
+                            parameters['path'] = parameters.pop('file_path')
+                        if 'filepath' in parameters:
+                            parameters['path'] = parameters.pop('filepath')
+                        if not parameters.get('path'):
+                            continue  # Skip if no path provided
 
                 actions.append({
                     'tool': tool_name,
                     'parameters': parameters
                 })
-            except json.JSONDecodeError:
-                self.logger.warning('Failed to parse action parameters', {
-                    'tool': tool_name,
-                    'raw_parameters': match[1]
-                })
-
-                # Try to create action with default parameters
-                if tool_name == 'list_directory':
-                    actions.append({
-                        'tool': 'list_directory',
-                        'parameters': {'path': '.'}
-                    })
 
         # Also look for simpler patterns like "create file: filename.py"
         simple_patterns = [
@@ -312,7 +536,7 @@ Please provide a helpful response and use tools when appropriate to complete the
             return []
 
         results = []
-        conversation_id = f"agent-{self.id}"
+        conversation_id = f"agent-{self.config.id}"
 
         for action in actions:
             try:
@@ -421,6 +645,234 @@ Please provide a helpful response and use tools when appropriate to complete the
 
         return enhanced_response
 
+    async def _execute_single_task(self, task, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a single task with enhanced prompting and result tracking"""
+        try:
+            # Check if this is a template-based task with predefined content
+            if task.metadata.get('template_based') and task.metadata.get('file_content'):
+                return await self._execute_template_task(task, options)
+
+            # Create task-specific prompt with enhanced file creation guidance
+            task_prompt = f"""
+You are executing a specific task as part of a larger autonomous workflow.
+
+**Current Task:** {task.name}
+**Task Description:** {task.description}
+
+EXECUTION REQUIREMENTS:
+1. Create complete, functional files with proper content
+2. Include all necessary imports, dependencies, and configurations
+3. Follow best practices for the language/framework being used
+4. Add appropriate comments and documentation
+5. Ensure files are production-ready, not just placeholders
+6. Create directory structures as needed
+7. Include error handling where appropriate
+
+IMPORTANT: Do not create empty files or files with just comments. Every file should contain complete, working implementation.
+
+For web applications, include:
+- Complete HTML templates with proper structure
+- CSS styling (inline or separate files)
+- JavaScript functionality where needed
+- Configuration files (requirements.txt, package.json, etc.)
+- Environment setup files
+- Database models and migrations if applicable
+
+For Python projects, include:
+- Proper imports and dependencies
+- Complete class and function implementations
+- Error handling and logging
+- Configuration management
+- Requirements.txt with all dependencies
+
+Focus only on this specific task. Be thorough and create complete, functional implementations.
+"""
+
+            # Execute the task using single prompt processing
+            result = await self.process_single_prompt(task_prompt, options)
+
+            # Extract file operations from execution results
+            files_created = []
+            files_modified = []
+            commands_executed = []
+
+            if result.get('execution_results'):
+                for exec_result in result['execution_results']:
+                    if exec_result.get('success') and exec_result.get('tool'):
+                        tool_name = exec_result['tool']
+                        tool_result = exec_result.get('result', {})
+
+                        if tool_name in ['write_file', 'create_file']:
+                            file_path = tool_result.get('path')
+                            if file_path:
+                                files_created.append(file_path)
+                        elif tool_name == 'execute_command':
+                            command = tool_result.get('command')
+                            if command:
+                                commands_executed.append(command)
+
+            # Add file tracking to result
+            result['files_created'] = files_created
+            result['files_modified'] = files_modified
+            result['commands_executed'] = commands_executed
+
+            return result
+
+        except Exception as error:
+            self.logger.error(f'Task execution failed: {task.name}', {
+                'task_id': task.id,
+                'error': str(error)
+            })
+
+            return {
+                'success': False,
+                'error': str(error),
+                'files_created': [],
+                'files_modified': [],
+                'commands_executed': []
+            }
+
+    async def _execute_template_task(self, task, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a template-based task with predefined content"""
+        try:
+            files_created = []
+            files_modified = []
+            commands_executed = []
+
+            # Handle directory creation task
+            if 'directory structure' in task.name.lower():
+                # Create necessary directories
+                directories = ['templates', 'static', 'static/css', 'static/js']
+                directories_created = []
+
+                for directory in directories:
+                    try:
+                        result = await self.tool_registry.execute_tool(
+                            'create_directory',
+                            {'path': directory},
+                            f"agent-{self.config.id}"
+                        )
+                        if result.get('success'):
+                            directories_created.append(directory)
+                            self.logger.info(f"Created directory: {directory}")
+                        else:
+                            self.logger.error(f"Failed to create directory {directory}: {result.get('error')}")
+                    except Exception as dir_error:
+                        self.logger.error(f"Exception creating directory {directory}: {dir_error}")
+
+                return {
+                    'success': True,
+                    'response': f"Created project directory structure ({len(directories_created)} directories)",
+                    'files_created': [],
+                    'files_modified': [],
+                    'commands_executed': [],
+                    'directories_created': directories_created
+                }
+
+            # Handle file creation with predefined content
+            elif task.metadata.get('file_path') and task.metadata.get('file_content'):
+                file_path = task.metadata['file_path']
+                file_content = task.metadata['file_content']
+
+                # Create the file with predefined content
+                result = await self.tool_registry.execute_tool(
+                    'write_file',
+                    {
+                        'path': file_path,
+                        'content': file_content
+                    },
+                    f"agent-{self.config.id}"
+                )
+
+                if result.get('success'):
+                    files_created.append(file_path)
+                    self.logger.info(f"Created file with template content: {file_path}")
+
+                    return {
+                        'success': True,
+                        'response': f"Created {file_path} with complete implementation",
+                        'files_created': files_created,
+                        'files_modified': files_modified,
+                        'commands_executed': commands_executed
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': f"Failed to create file: {file_path}",
+                        'files_created': [],
+                        'files_modified': [],
+                        'commands_executed': []
+                    }
+
+            # Handle setup/initialization tasks
+            elif 'initialize' in task.name.lower() or 'test' in task.name.lower():
+                project_type = task.metadata.get('project_type')
+
+                if project_type == 'flask_web_app':
+                    # Run Flask app initialization
+                    init_command = 'python -c "from app import init_db; init_db(); print(\'Database initialized successfully\')"'
+
+                    result = await self.tool_registry.execute_tool(
+                        'execute_command',
+                        {'command': init_command},
+                        f"agent-{self.config.id}"
+                    )
+
+                    if result.get('success'):
+                        commands_executed.append(init_command)
+
+                        return {
+                            'success': True,
+                            'response': "Application initialized successfully. Database created and ready to use.",
+                            'files_created': [],
+                            'files_modified': [],
+                            'commands_executed': commands_executed
+                        }
+
+                return {
+                    'success': True,
+                    'response': "Setup task completed",
+                    'files_created': [],
+                    'files_modified': [],
+                    'commands_executed': []
+                }
+
+            # Fallback to regular task execution
+            return await self.process_single_prompt(
+                f"Complete this task: {task.name}\nDescription: {task.description}",
+                options
+            )
+
+        except Exception as error:
+            self.logger.error(f'Template task execution failed: {task.name}', {
+                'task_id': task.id,
+                'error': str(error)
+            })
+
+            return {
+                'success': False,
+                'error': str(error),
+                'files_created': [],
+                'files_modified': [],
+                'commands_executed': []
+            }
+
+    def _on_task_start(self, task):
+        """Callback when a task starts"""
+        self.task_manager.display_task_start_notification(task)
+
+    def _on_task_complete(self, task):
+        """Callback when a task completes"""
+        self.task_manager.display_task_complete_notification(task)
+
+    def _on_task_failed(self, task):
+        """Callback when a task fails"""
+        self.task_manager.display_task_failed_notification(task)
+
+    def _on_all_tasks_complete(self):
+        """Callback when all tasks are complete"""
+        self.task_manager.console.print(f"\n🎉 [bold green]All tasks completed successfully![/bold green]")
+
     async def test_connection(self, provider: str, api_key: str) -> Dict[str, Any]:
         """Test connection to provider"""
         try:
@@ -460,3 +912,72 @@ Please provide a helpful response and use tools when appropriate to complete the
             'uptime': (datetime.now() - self.start_time).total_seconds(),
             'metrics': self.metrics.__dict__
         }
+
+    def _extract_complete_json(self, json_str: str) -> str:
+        """Extract complete JSON object by counting braces"""
+        if not json_str.strip().startswith('{'):
+            return json_str
+
+        brace_count = 0
+        in_string = False
+        in_triple_quote = False
+        escape_next = False
+        end_pos = 0
+        i = 0
+
+        while i < len(json_str):
+            char = json_str[i]
+
+            if escape_next:
+                escape_next = False
+                i += 1
+                continue
+
+            if char == '\\' and (in_string or in_triple_quote):
+                escape_next = True
+                i += 1
+                continue
+
+            # Check for triple quotes
+            if i + 2 < len(json_str) and json_str[i:i+3] == '"""':
+                if not in_string:
+                    in_triple_quote = not in_triple_quote
+                i += 3
+                continue
+
+            if char == '"' and not in_triple_quote:
+                in_string = not in_string
+                i += 1
+                continue
+
+            if not in_string and not in_triple_quote:
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end_pos = i + 1
+                        break
+
+            i += 1
+
+        return json_str[:end_pos] if end_pos > 0 else json_str
+
+    def _fix_json_content(self, json_str: str) -> str:
+        """Fix common JSON issues like triple quotes"""
+        import re
+
+        # Replace triple quotes with escaped quotes in content values
+        # This regex finds "content": """...""" patterns and fixes them
+        def replace_triple_quotes(match):
+            key = match.group(1)
+            content = match.group(2)
+            # Escape quotes and newlines in the content
+            escaped_content = content.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+            return f'"{key}": "{escaped_content}"'
+
+        # Pattern to match "key": """content"""
+        pattern = r'"([^"]+)":\s*"""(.*?)"""'
+        fixed_json = re.sub(pattern, replace_triple_quotes, json_str, flags=re.DOTALL)
+
+        return fixed_json

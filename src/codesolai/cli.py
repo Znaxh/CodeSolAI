@@ -293,7 +293,8 @@ async def handle_agent_prompt(provider: str, api_key: str, prompt: str,
             'max_iterations': max_iterations,
             'tools_enabled': True,
             'auto_approve': autonomous_mode,
-            'confirmation_required': not autonomous_mode
+            'confirmation_required': not autonomous_mode,
+            'autonomous': autonomous_mode  # Explicitly pass autonomous flag
         }
 
         spinner.start('Initializing agent')
