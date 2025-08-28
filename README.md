@@ -2,6 +2,9 @@
     <img src="https://github.com/Znaxh/CodeSolAI/blob/main/images/codesolai_logo-png.png?raw=true" height="100" width="375" alt="banner" /><br>
 </h1>
 
+<p align="center">
+  <img src="https://logos-world.net/wp-content/uploads/2023/07/Medium-Emblem.png" alt="Medium Logo" height="50" width="100"/>
+</p>
 
 # CodeSolAI
 
