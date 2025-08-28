@@ -3,8 +3,11 @@
 </h1>
 
 <p align="center">
-  <img src="https://logos-world.net/wp-content/uploads/2023/07/Medium-Emblem.png" alt="Medium Logo" height="50" width="100"/>
+  <a href="https://medium.com/@znaxxh/codesolai-7c78a050b759" target="_blank">
+    <img src="https://logos-world.net/wp-content/uploads/2023/07/Medium-Emblem.png" alt="Medium Logo" height="50" width="100"/>
+  </a>
 </p>
+
 
 # CodeSolAI
 
