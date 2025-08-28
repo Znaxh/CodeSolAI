@@ -7,7 +7,7 @@
   <img 
     src="https://logos-world.net/wp-content/uploads/2023/07/Medium-Emblem.png" 
     alt="Medium Logo" 
-    height="30" 
+    height="50" 
     width="100" 
     style="object-fit: cover; object-position: center; border-radius: 5px; border: 2px solid white;"
   />
