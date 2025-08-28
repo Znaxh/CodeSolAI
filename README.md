@@ -11,95 +11,135 @@
 
 # CodeSolAI
 
-A fully autonomous agentic CLI tool for interacting with large language models, featuring sophisticated task decomposition, real-time progress tracking, and comprehensive file creation capabilities.
+An intelligent command-line assistant that helps you build software projects through natural language conversations. Simply describe what you want to create, and CodeSolAI will automatically break down your request into tasks and execute them step by step.
 
-## Overview
+## What is CodeSolAI?
 
-CodeSolAI is an advanced command-line interface that transforms simple prompts into complex, multi-step autonomous executions. Built with a focus on developer productivity, it provides intelligent task breakdown, sequential execution, and robust file creation - making it ideal for rapid prototyping, project scaffolding, and automated development workflows.
+CodeSolAI is like having an experienced developer assistant that can understand your project ideas and turn them into working code. Whether you're a beginner learning to code or an experienced developer looking to speed up your workflow, CodeSolAI can help you:
 
-## Key Features
+- **Create complete projects** from simple descriptions
+- **Generate functional code** with proper structure and best practices
+- **Set up development environments** automatically
+- **Build web applications, APIs, scripts, and more** without writing code manually
 
-### Autonomous Agent System
-- **Intelligent Task Decomposition**: Automatically breaks down complex requests into manageable subtasks
-- **Sequential Execution**: Executes tasks in logical order with dependency management
-- **Real-Time Progress Tracking**: Visual progress bars, task status updates, and completion summaries
-- **Comprehensive File Creation**: Creates complete, functional files with proper content (not placeholders)
-- **Project Structure Generation**: Automatically creates proper directory structures and file hierarchies
+Think of it as your personal coding assistant that never gets tired and always follows best practices.
 
-### Advanced Features
-- **Autonomous Mode**: Auto-approve actions for hands-free operation
-- **Effort Levels**: Control reasoning complexity (low, medium, high, maximum)
-- **Security Controls**: Path validation, command filtering, and sandbox mode
-- **Intelligent Logging**: Minimal output by default, verbose debugging available
-- **Error Handling**: Graceful fallbacks and user-friendly error messages
+## What Can CodeSolAI Do?
 
-### Multi-Provider Support
-- **Claude (Anthropic)**: Claude 3.5 Sonnet and Haiku models
-- **Google Gemini**: Gemini Pro and Flash models
-- **OpenAI GPT**: GPT-4 and GPT-3.5 models
-- **Flexible Configuration**: Easy switching between providers and models
+### For Beginners
+- **Learn by Example**: See how real projects are structured and built
+- **No Setup Hassle**: CodeSolAI handles all the configuration and dependencies
+- **Instant Results**: Get working code immediately, then study how it works
+- **Best Practices**: All generated code follows industry standards and conventions
 
-### Comprehensive Tool System
-- **Filesystem Operations**: Read, write, create, delete, copy, move files and directories
-- **Command Execution**: Run shell commands with security controls
-- **Code Analysis**: Analyze code structure, complexity, and dependencies
-- **Network Operations**: HTTP requests, file downloads, connectivity testing
-- **18+ Specialized Tools**: Covering all common development tasks
+### For Everyone
+- **Smart Task Breaking**: Converts "build a website" into specific, actionable steps
+- **Real-Time Progress**: Watch as your project comes together step by step
+- **Complete Projects**: Creates fully functional applications, not just code snippets
+- **Multiple Languages**: Works with Python, JavaScript, HTML/CSS, and more
 
-## Installation
+### Supported AI Models
+CodeSolAI works with the most advanced AI models available:
+- **Claude (Anthropic)**: Excellent for complex reasoning and code generation
+- **Google Gemini**: Fast and efficient for most development tasks
+- **OpenAI GPT**: Reliable and well-tested for various programming languages
 
-### Prerequisites
-- Python 3.9 or higher
-- Internet connection for API calls
+### Built-in Capabilities
+CodeSolAI comes with everything needed for software development:
+- **File Management**: Create, read, write, and organize project files
+- **Code Execution**: Run and test your code automatically
+- **Project Analysis**: Understand code structure and identify improvements
+- **Web Operations**: Download resources and make API calls
+- **Development Tools**: 18+ specialized tools for common programming tasks
 
-### Install from PyPI
+## Getting Started
+
+### Step 1: Check Your System
+Before installing, make sure you have:
+- **Python 3.9 or newer** (check with `python --version`)
+- **Internet connection** (CodeSolAI needs to connect to AI services)
+
+Don't have Python? Download it from [python.org](https://python.org) - it's free and easy to install.
+
+### Step 2: Install CodeSolAI
+Choose the method that works best for you:
+
+**Option A: Simple Installation (Recommended for beginners)**
 ```bash
 pip install codesolai
 ```
 
-### Install with uv (Recommended)
+**Option B: Modern Python Package Manager**
 ```bash
 uv add codesolai
 ```
 
-### Install from Source
+**Option C: From Source Code (For developers)**
 ```bash
 git clone https://github.com/Znaxh/codesolai.git
 cd codesolai
 pip install -e .
 ```
 
-## Quick Start
+### Step 3: Get an AI API Key
+CodeSolAI needs an API key to work with AI services. Choose one:
 
-### 1. Initial Setup
-Run the interactive setup to configure your API keys:
+- **Claude (Recommended)**: Sign up at [console.anthropic.com](https://console.anthropic.com)
+- **Google Gemini**: Get a key at [aistudio.google.com](https://aistudio.google.com)
+- **OpenAI GPT**: Register at [platform.openai.com](https://platform.openai.com)
+
+Most services offer free credits to get started.
+
+## Your First Project
+
+### Step 1: Set Up Your API Key
+After installation, run this command to configure CodeSolAI:
 ```bash
 codesolai --setup
 ```
+This will guide you through adding your API key. You only need to do this once.
 
-### 2. Basic Usage
+### Step 2: Create Your First Project
+Let's start with something simple. Try this command:
 ```bash
-# Simple prompt
-codesolai "Create a Python web scraper for news articles"
-
-# Agent mode with specific provider
-codesolai --agent --provider claude "Build a REST API with authentication"
-
-# Autonomous mode for complex projects
-codesolai --agent --autonomous "Create a full-stack web application with React and FastAPI"
+codesolai --agent --autonomous "Create a simple Python calculator that can add, subtract, multiply, and divide"
 ```
 
-### 3. Advanced Usage
+Watch as CodeSolAI:
+1. Breaks down your request into specific tasks
+2. Creates the necessary files and folders
+3. Writes the Python code
+4. Tests the calculator to make sure it works
+
+### Step 3: Try More Examples
+
+**Build a Website**
 ```bash
-# High effort reasoning with debug logging
-codesolai --agent --autonomous --effort high --debug "Optimize this codebase for performance"
+codesolai --agent --autonomous "Create a personal portfolio website with HTML and CSS"
+```
 
-# Specific model and custom parameters
-codesolai --provider gemini --model gemini-pro --temperature 0.3 "Explain quantum computing"
+**Make a Web API**
+```bash
+codesolai --agent --autonomous "Build a simple REST API for a todo list using Python Flask"
+```
 
-# Interactive chat mode
+**Data Analysis Script**
+```bash
+codesolai --agent --autonomous "Create a Python script that analyzes CSV data and creates charts"
+```
+
+**Interactive Mode**
+For back-and-forth conversations:
+```bash
 codesolai --interactive
 ```
+
+### Understanding the Commands
+
+- `--agent`: Enables smart task planning and execution
+- `--autonomous`: Lets CodeSolAI work independently without asking for permission
+- `--provider claude`: Specifies which AI service to use (claude, gemini, or gpt)
+- `--interactive`: Starts a chat-like conversation mode
 
 ## Command Line Options
 
